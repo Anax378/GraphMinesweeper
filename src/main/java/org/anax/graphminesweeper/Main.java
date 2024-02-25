@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 
 public class Main {
@@ -14,18 +15,25 @@ public class Main {
         Window w = new Window(1080-500, 1080-500);
         GameGraph graph = new GameGraph();
 
-        Cell[] cells = new Cell[100];
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("number of cells: ");
+        int cell_count = Integer.parseInt(scanner.nextLine());
+        System.out.print("number of connections: ");
+        int connections = Integer.parseInt(scanner.nextLine());
+        System.out.print("mine density (from 0.0 to 1.0): ");
+        double density = Double.parseDouble(scanner.nextLine());
+
+        Cell[] cells = new Cell[cell_count];
 
         Random random = new Random();
 
         Arrays.setAll(cells, i -> {
             Cell cell = new Cell();
             cell.cellNode.coord.add(new Vector(random.nextFloat(cells.length*10), random.nextFloat(cells.length*10)));
-            cell.cellNode.box.isMine = random.nextDouble(1) < 0.2;
+            cell.cellNode.box.isMine = random.nextDouble(1) < density;
             return cell;
         });
 
-        int connections = Math.round(cells.length*1.5f);
         while(connections > 0){
             int a = random.nextInt(cells.length);
             int b = random.nextInt(cells.length);
@@ -152,8 +160,7 @@ public class Main {
             }
             if(w.unprocessedKeyPresses[KeyEvent.VK_R]){
                 w.unprocessedKeyPresses[KeyEvent.VK_R] = false;
-                offset.scale(0);
-                offset.add(Vector.fromCoords(rootCell.cellNode.coord.scale(scaleFactor).add(offset), Coord.ZERO));
+                offset.add(Vector.fromCoords(Coord.ZERO, rootCell.cellNode.getRenderPosition(offset, scaleFactor)).scale(-1)).add(new Vector((double) w.width /2, (double) w.height /2));
             }
             if(w.unprocessedKeyPresses[KeyEvent.VK_D]){
                 w.unprocessedKeyPresses[KeyEvent.VK_D] = false;
