@@ -6,7 +6,7 @@ mine density : 0.2
 Controlls:  
 drag - move view  
 scroll - zoom  
-rightclick - place flag  
+right click - place flag  
 left click - uncover cell  
 shift + left click - move cell  
 C - move view to 0, 0 (0, 0 is always the geomertic center of all cells)  
