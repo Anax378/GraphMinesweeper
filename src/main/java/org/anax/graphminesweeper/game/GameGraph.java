@@ -1,8 +1,7 @@
 package org.anax.graphminesweeper.game;
 
 import java.awt.image.BufferedImage;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class GameGraph {
     public Set<CellNode> cells;
@@ -16,7 +15,6 @@ public class GameGraph {
 
     public void addCell(Cell cell){
         cells.add(cell.cellNode);
-        Vector offset = new Vector(0, 0);
     }
     public void addAll(Cell[] cells){
         for(Cell cell : cells){
@@ -43,17 +41,27 @@ public class GameGraph {
     }
 
     public double getConnectedCellsAttractionForce(CellNode cell1, CellNode cell2){
-        double distance = (double) Math.sqrt(Math.pow(cell1.coord.x-cell2.coord.x, 2) + Math.pow(cell1.coord.y-cell2.coord.y, 2));
+        double distance = Math.sqrt(Math.pow(cell1.coord.x-cell2.coord.x, 2) + Math.pow(cell1.coord.y-cell2.coord.y, 2));
         return connectionSprigConstant*distance;
     }
 
-    public BufferedImage render(int width, int height, Vector offset, double scaleFactor){
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    public BufferedImage render(Camera camera){
+        BufferedImage image = new BufferedImage(camera.width, camera.height, BufferedImage.TYPE_INT_RGB);
+
+        CellNode[] cellsArray = new CellNode[cells.size()];
+
+        int i = 0;
         for(CellNode node : cells){
-            node.renderConnections(image, offset, scaleFactor);
+            cellsArray[i] = node;
+            i++;
         }
-        for(CellNode node : cells){
-            node.renderCell(image, offset, scaleFactor);
+
+        Arrays.sort(cellsArray, Comparator.comparingDouble(o -> camera.getScaleFactor(o.coord)));
+        for(CellNode node : cellsArray){
+            node.renderConnections(image, camera);
+        }
+        for(CellNode node : cellsArray){
+            node.renderCell(image, camera);
         }
         return image;
     }
@@ -61,12 +69,15 @@ public class GameGraph {
     public void center(){
         double averageX = 0;
         double averageY = 0;
+        double averageZ = 0;
         int size = cells.size();
+
         for(CellNode node : cells){
             averageX += node.coord.x*((double) 1 /size);
             averageY += node.coord.y*((double) 1 /size);
+            averageZ += node.coord.z*((double) 1 /size);
         }
-        Vector averageOffset = new Vector(averageX, averageY).scale(-1);
+        Vector averageOffset = new Vector(averageX, averageY, averageZ).scale(-1);
 
         for(CellNode node : cells){
             node.coord.add(averageOffset);
@@ -76,7 +87,7 @@ public class GameGraph {
         double timeStep = time/subSteps;
         for(int i = 0; i < subSteps; i++){
             for(CellNode cellNode : cells){
-                Vector forces = new Vector(0, 0);
+                Vector forces = new Vector(0, 0, 0);
                 for(Cell connectedCell : cellNode.cell.connectedCells){
                     forces.add(Vector.fromCoords(cellNode.coord, connectedCell.cellNode.coord).scaleTo(getConnectedCellsAttractionForce(cellNode, connectedCell.cellNode)));
                 }

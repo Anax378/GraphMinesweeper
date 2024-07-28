@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="GraphMinesweeper:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/GraphMinesweeper_jar</output-path>
+    <root id="archive" name="GraphMinesweeper.jar">
+      <element id="module-output" name="GraphMinesweeper" />
+    </root>
+  </artifact>
+</component>

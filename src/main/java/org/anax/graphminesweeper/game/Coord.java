@@ -1,30 +1,32 @@
 package org.anax.graphminesweeper.game;
 
 public class Coord {
-    public static final Coord ZERO = new Coord(0, 0);
+    public static final Coord ZERO = new Coord(0, 0, 0);
 
     public double x;
     public double y;
-    public Coord(double x, double y){
+    public double z;
+
+    public Coord(double x, double y, double z){
         this.x = x;
         this.y = y;
+        this.z = z;
     }
     public Coord copy(){
-        return new Coord((int) x, (int) y);
+        return new Coord(x, y, z);
     }
 
     public int roundX(){
         return (int) Math.round(x);
     }
-
     public int roundY(){
         return (int) Math.round(y);
     }
-
+    public int roundZ(){
+        return (int) Math.round(z);
+    }
     public Coord add(Vector vec){
-        this.x += vec.x;
-        this.y += vec.y;
-        return this;
+        return new Coord(x+vec.x, y+vec.y, z+vec.z);
     }
 
     public double distance(Coord coord){
@@ -32,9 +34,7 @@ public class Coord {
     }
 
     public Coord scale(double factor){
-        this.x *= factor;
-        this.y *= factor;
-        return this;
+        return new Coord(x*factor, y*factor, z*factor);
     }
 
     public void restore(){
@@ -44,16 +44,18 @@ public class Coord {
         if(Double.isNaN(y)){
             y = 0;
         }
+        if(Double.isNaN(z)){
+            z = 0;
+        }
     }
 
     public void printSelf(){
-        System.out.println("x: " + x + ", y: " + y);
+        System.out.println("x: " + x + ", y: " + y + ", z: " + z);
     }
-
     @Override
     public boolean equals(Object obj) {
         if(obj instanceof Coord){
-            return this.x == ((Coord) obj).x && this.y == ((Coord) obj).y;
+            return this.x == ((Coord) obj).x && this.y == ((Coord) obj).y && this.z == ((Coord)obj).z;
         }
         return false;
     }

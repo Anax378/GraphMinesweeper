@@ -1,10 +1,8 @@
 package org.anax.graphminesweeper.render;
 
-import org.anax.graphminesweeper.game.Coord;
-import org.anax.graphminesweeper.game.Vector;
-
+import org.anax.graphminesweeper.game.Camera;
 import java.awt.image.BufferedImage;
 
 public interface IRenderable {
-    public BufferedImage renderOnImage(BufferedImage image, Vector offset, double scaleFactor);
+    public BufferedImage renderOnImage(BufferedImage image, Camera camera);
 }

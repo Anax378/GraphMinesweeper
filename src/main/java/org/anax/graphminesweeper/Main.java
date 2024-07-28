@@ -3,98 +3,90 @@ package org.anax.graphminesweeper;
 import org.anax.graphminesweeper.app.Window;
 import org.anax.graphminesweeper.game.*;
 
-import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Arrays;
+import java.awt.event.WindowEvent;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
-        Window w = new Window(1080-500, 1080-500);
+
+        Window w = new Window((int) (1920*0.8f), (int) (1080*0.7f));
         GameGraph graph = new GameGraph();
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("number of cells: ");
-        int cell_count = Integer.parseInt(scanner.nextLine());
-        System.out.print("number of connections: ");
-        int connections = Integer.parseInt(scanner.nextLine());
-        System.out.print("mine density (from 0.0 to 1.0): ");
-        double density = Double.parseDouble(scanner.nextLine());
-
-        Cell[] cells = new Cell[cell_count];
 
         Random random = new Random();
 
-        Arrays.setAll(cells, i -> {
-            Cell cell = new Cell();
-            cell.cellNode.coord.add(new Vector(random.nextFloat(cells.length*10), random.nextFloat(cells.length*10)));
-            cell.cellNode.box.isMine = random.nextDouble(1) < density;
-            return cell;
-        });
+        int cellCount = 25;
+        int spawnBoundingBoxSize = 100;
+        int connections = 100;
 
-        while(connections > 0){
-            int a = random.nextInt(cells.length);
-            int b = random.nextInt(cells.length);
-            if(a != b){
-                cells[a].connectCell(cells[b]);
-                connections--;
-            }
+        Cell[] cells = new Cell[cellCount];
+        for(int i = 0; i < cellCount; i++){
+            cells[i] = new Cell(new Coord(random.nextInt(spawnBoundingBoxSize), random.nextInt(spawnBoundingBoxSize), random.nextInt(spawnBoundingBoxSize)));
         }
 
-        Cell rootCell = null;
-        int maxConnections = 0;
-        for(Cell cell : cells){
-            if(cell.connectedCells.size() > maxConnections){
-                maxConnections = cell.connectedCells.size();
-                rootCell = cell;
-            }
-        }
-
-
-        while(true){
-            Set<Cell> subTreeCells = rootCell.getSubTreeCells();
-            boolean canBreak = true;
-            for(Cell cell : cells){
-                if(!subTreeCells.contains(cell)){
-                    ((Cell)subTreeCells.toArray()[random.nextInt(subTreeCells.size())]).connectCell(cell);
-                    canBreak = false;
-                }
-            }
-            if(canBreak){break;}
+        for(int i = 0; i < connections; i++){
+            cells[random.nextInt(cellCount)].connectCell(cells[random.nextInt(cellCount)]);
         }
 
         graph.addAll(cells);
-
-        long start = System.currentTimeMillis();
-
-        Vector offset = new Vector(0, 0);
-        Vector anchor = new Vector(200, 200);
-
-        offset.add(Vector.fromCoords(Coord.ZERO, rootCell.cellNode.coord));
-
-        Point lastMousePosition = new Point(0, 0);
-        float scaleFactor = 1;
-
-        int simulationTime = 0;
-        for(int i = 0; i < simulationTime; i++){
-            System.out.println("simulating graph " + i + "/" + simulationTime);
-            graph.advanceTime(1, 1);
-        }
-
-        boolean isInDragMode = false;
-        boolean disableMovement = false;
-        Cell selectedCell = null;
 
         for(CellNode cell : graph.cells){
             cell.box.refreshMineCount();
         }
 
-        while(true){
+        Camera camera = null;
+
+        RotationMatrix3D yawPlus = RotationMatrix3D.fromYAngle(Math.toRadians(0.5));
+        RotationMatrix3D yawMinus = RotationMatrix3D.fromYAngle(Math.toRadians(-0.5));
+
+        Vector WMove = new Vector(0, 0, 1);
+        Vector SMove = WMove.scale(-1);
+        Vector AMove = new Vector(-1, 0, 0);
+        Vector DMove = AMove.scale(-1);
+        Vector spaceMove = new Vector(0, 1, 0);
+        Vector shiftMove = spaceMove.scale(-1);
+
+        long start = System.currentTimeMillis();
+
+        while(!w.unprocessedKeyPresses[KeyEvent.VK_ESCAPE]){
+
+            if(w.unprocessedKeyPresses[KeyEvent.VK_R] || camera == null){
+                w.unprocessedKeyPresses[KeyEvent.VK_R] = false;
+                camera = new Camera(w.width, w.height, new Vector(0, 0, 1), new Coord(0, 0, 0));
+                camera.setFocalLengthFromFOV(Math.toRadians(170));
+            }
+            w.setImage(graph.render(camera));
+            if(System.currentTimeMillis()-start > 1000/20f){
+                graph.advanceTime(100, 5);
+                start = System.currentTimeMillis();
+
+                double m = w.downKeys[KeyEvent.VK_CONTROL] ? 2 : 1;
+                if(w.isWDown){camera.relativeMove(WMove.scale(m));}
+                if(w.isSDown){camera.relativeMove(SMove.scale(m));}
+                if(w.isADown){camera.relativeMove(AMove.scale(m));}
+                if(w.isDDown){camera.relativeMove(DMove.scale(m));}
+                if(w.isSpaceDown){camera.relativeMove(spaceMove.scale(m));}
+                if(w.isShiftDown){camera.relativeMove(shiftMove.scale(m));}
+            }
+
+            if(w.mouseXMotionChange != 0){
+                boolean isPlus = w.mouseXMotionChange < 0;
+                int rot = Math.abs(w.mouseXMotionChange);
+                for(int i = 0; i < rot; i++){
+                    camera.rotate(isPlus ? yawPlus : yawMinus);
+                }
+                w.mouseXMotionChange = 0;
+            }
+
+            if(w.mouseYMotionChange != 0){
+                camera.rotate(-Math.toRadians(0.5)* w.mouseYMotionChange, camera.getRight());
+                w.mouseYMotionChange = 0;
+            }
+
+/*
             if(w.isUnprocessedMouse3Press){
                 w.isUnprocessedMouse3Press = false;
-                Coord mousePos = new Coord(lastMousePosition.x, lastMousePosition.y);
+                Coord2D mousePos = new Coord2D(lastMousePosition.x, lastMousePosition.y);
                 for(CellNode cell : graph.cells){
                     if(cell.getRenderPosition(offset, scaleFactor).distance(mousePos) < cell.radius*scaleFactor){
                         cell.box.isFlagged = !cell.box.isFlagged;
@@ -123,7 +115,7 @@ public class Main {
 
             if(w.isUnprocessedMouse1Press){
                 w.isUnprocessedMouse1Press = false;
-                Coord mousePos = new Coord(lastMousePosition.x, lastMousePosition.y);
+                Coord2D mousePos = new Coord2D(lastMousePosition.x, lastMousePosition.y);
                 for(Cell cell : cells){
                     if(cell.cellNode.getRenderPosition(offset, scaleFactor).distance(mousePos) < (cell.cellNode.radius*scaleFactor)){
                         if(w.isShiftDown){
@@ -220,6 +212,10 @@ public class Main {
                 w.scaleAmount = 0;
             }
             w.setImage(graph.render(w.width, w.height, offset, scaleFactor));
+
+ */
         }
+        w.frame.dispatchEvent(new WindowEvent(w.frame, WindowEvent.WINDOW_CLOSING));
+
     }
 }

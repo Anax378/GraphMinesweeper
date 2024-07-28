@@ -6,9 +6,13 @@ import java.util.Set;
 public class Cell {
     public Set<Cell> connectedCells;
     public CellNode cellNode;
-    public Cell(){
-        cellNode = new CellNode(this, 0, 0);
+
+    public Cell(Coord coord){
+        cellNode = new CellNode(this, coord);
         connectedCells = new HashSet<>();
+    }
+    public Cell(){
+        this(new Coord(0, 0, 0));
     }
     public Cell(Set<Cell> connectedCells){
         this.connectedCells = connectedCells;
@@ -16,7 +20,7 @@ public class Cell {
 
     public CellNode getCellNode(){
         if(this.cellNode == null){
-            this.cellNode = new CellNode(this, 0, 0);
+            this.cellNode = new CellNode(this, 0, 0, 0);
         }
         return cellNode;
     }
